@@ -1,58 +1,16 @@
-import os
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import pdfplumber
+import re
 
-try:
-    from transformers import pipeline
-    print("Loading model... this might take a minute on the first run.")
-    generator = pipeline("text2text-generation", model="valhalla/t5-base-qg-hl")
-    print("Model loaded successfully!")
-except ImportError:
-    print("Transformers or Torch not found, using Mock AI Generator.")
-    generator = "MOCK"
-except Exception as e:
-    print(f"Error loading model: {e}")
-    generator = "MOCK"
+with open(r"c:\ExamEase Project\Exam-Ease\backend\app.py", "r", encoding="utf-8") as f:
+    lines = f.readlines()
 
-app = Flask(__name__)
-CORS(app)
+# The target block to replace is lines 51 to 211 (0-indexed 50 to 211).
+# Let's cleanly replace the `generate_questions` fallback block.
 
-@app.route('/api/generate', methods=['POST'])
-def generate_questions():
-    if not generator:
-        return jsonify({"error": "Model failed to load"}), 500
-
-    text = ""
-    
-    # Handle PDF file upload
-    if 'pdf' in request.files:
-        file = request.files['pdf']
-        if file.filename == '':
-            return jsonify({"error": "No selected file"}), 400
-        try:
-            with pdfplumber.open(file) as pdf:
-                for page in pdf.pages:
-                    page_text = page.extract_text()
-                    if page_text:
-                        text += page_text + "\n"
-        except Exception as e:
-            return jsonify({"error": f"Error parsing PDF: {str(e)}"}), 500
-
-    # Handle direct text input
-    elif 'text' in request.form:
-        text = request.form['text']
-    elif request.json and 'text' in request.json:
-        text = request.json['text']
-        
-    if not text.strip():
-        return jsonify({"error": "No text could be extracted or provided"}), 400
-
-    try:
+replacement = """    try:
         import re
         
         # 1. Clean up unwanted common question paper artifacts
-        marks_pattern = r'\[\s*\d+\s*(?:marks?|m)?\s*\]|\(\s*\d+\s*(?:marks?|m)?\s*\)|\b\d+\s*marks?\b'
+        marks_pattern = r'\\[\\s*\\d+\\s*(?:marks?|m)?\\s*\\]|\\(\\s*\\d+\\s*(?:marks?|m)?\\s*\\)|\\b\\d+\\s*marks?\\b'
         text = re.sub(marks_pattern, '', text, flags=re.IGNORECASE)
         
         # Remove empty blanks like "________"
@@ -65,22 +23,20 @@ def generate_questions():
             "answer the following", "all questions are compulsory", "section a", "section b",
             "section c", "section d", "section e", "part a", "part b", "part c", "part d", "part e"
         ]
-        text_lines = text.split('\n')
+        text_lines = text.split('\\n')
         cleaned_lines = []
         for line in text_lines:
             lower_line = line.lower()
             if any(phrase in lower_line for phrase in unwanted_phrases) and len(lower_line) < 100:
                 continue
             cleaned_lines.append(line)
-        text = '\n'.join(cleaned_lines)
+        text = '\\n'.join(cleaned_lines)
 
         for phrase in unwanted_phrases:
-            text = re.sub(r'(?i)' + re.escape(phrase) + r'[.\-:]?\s*', '', text)
+            text = re.sub(r'(?i)' + re.escape(phrase) + r'[.\\-:]?\\s*', '', text)
             
         # 2. Match question numbers -> creating individual questions
-        # Use robust regex to find main questions (e.g., "1.", "Q1.", "Question 1)") at start of line or after spaces,
-        # but avoid matching sub-parts like "a)", "i)".
-        split_pattern = r'(?:^|\n|\s{2,})(?:Q(?:uestion)?\.?\s*\d{1,3}|\d{1,3})\s*[\.\)-]\s*'
+        split_pattern = r'(?:^|\\n)\\s*(?:Q\\.?\\s*\\d+|Question\\s*\\d+|\\(?\\d+\\)?|\\([a-zA-Z]\\)|[a-zA-Z]\\)|\\([ivxIVX]+\\)|[ivxIVX]+\\))\\s*[.\\):-]?\\s+'
         
         matches = list(re.finditer(split_pattern, text))
         raw_questions = []
@@ -94,10 +50,10 @@ def generate_questions():
                 q_text = text[start_idx:end_idx].strip()
                 
                 # Clean up multiple newlines or arbitrary spaces
-                q_text = re.sub(r'\n+', '\n', q_text)
+                q_text = re.sub(r'\\n+', '\\n', q_text)
                 
-                # Strip out any lingering duplicate numbering if it somehow snuck in
-                q_text = re.sub(r'^\s*(?:Q(?:uestion)?\.?\s*\d{1,3}|\d{1,3})\s*[\.\)-]\s*', '', q_text)
+                # Further ensure no lingering numbering at the start of the extracted text
+                q_text = re.sub(r'^\\s*(?:Q\\.?\\s*\\d+|Question\\s*\\d+|\\(?\\d+\\)?|\\([a-zA-Z]\\)|[a-zA-Z]\\)|\\([ivxIVX]+\\)|[ivxIVX]+\\))\\s*[.\\):-]?\\s*', '', q_text)
                 
                 if len(q_text) > 2:
                     raw_questions.append({
@@ -111,11 +67,11 @@ def generate_questions():
         else:
             # Fallback for when no explicit numbers are found, extract based on sentences ending in ?
             # This ensures we purely copy from document without generating AI questions.
-            sentences = re.split(r'(?<=\?)\s+', text)
+            sentences = re.split(r'(?<=\\?)\\s+', text)
             for s in sentences:
                 s_clean = s.strip()
                 if len(s_clean) > 5 and '?' in s_clean:
-                    s_clean = re.sub(r'^\s*(?:Q(?:uestion)?\.?\s*\d{1,3}|\d{1,3})\s*[\.\)-]\s*', '', s_clean)
+                    s_clean = re.sub(r'^\\s*(?:Q\\.?\\s*\\d+|Question\\s*\\d+|\\(?\\d+\\)?|\\([a-zA-Z]\\)|[a-zA-Z]\\)|\\([ivxIVX]+\\)|[ivxIVX]+\\))\\s*[.\\):-]?\\s*', '', s_clean)
                     raw_questions.append({
                         "originalQuestion": s_clean,
                         "simplifiedQuestion": s_clean,
@@ -143,13 +99,26 @@ def generate_questions():
         return jsonify({"questions": formatted_questions})
         
     except Exception as e:
-        import traceback
-        traceback.print_exc()
-        return jsonify({"error": f"Error generating questions: {str(e)}"}), 500
+"""
 
-@app.route('/health', methods=['GET'])
-def health_check():
-    return jsonify({"status": "ok", "model_loaded": generator is not None})
+# Find start and end indices
+start_idx = -1
+end_idx = -1
 
-if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+for i, line in enumerate(lines):
+    if "    try:" in line and "import re" in lines[i+1]:
+        start_idx = i
+        break
+
+for i in range(start_idx+1, len(lines)):
+    if "    except Exception as e:" in lines[i]:
+        end_idx = i
+        break
+
+if start_idx != -1 and end_idx != -1:
+    new_lines = lines[:start_idx] + [replacement] + lines[end_idx+1:]
+    with open(r"c:\ExamEase Project\Exam-Ease\backend\app.py", "w", encoding="utf-8") as f:
+        f.writelines(new_lines)
+    print("Success replacing block.")
+else:
+    print("Failed to find block.")

@@ -201,32 +201,132 @@ body.light-mode .td__nav {
   color: var(--text-muted);
 }
 
-/* PDF Upload */
-.td__pdf-upload {
+/* ===== UPLOAD ZONE ===== */
+.td__upload-zone {
+  padding: 60px 40px;
+  border: 2px dashed var(--border-color);
+  border-radius: var(--radius);
+  text-align: center;
+  transition: all var(--transition-normal);
+  cursor: pointer;
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.td__upload-zone:hover {
+  border-color: var(--primary);
+  background: var(--bg-card);
+}
+
+.td__upload-zone--dragging {
+  border-color: var(--primary);
+  background: rgba(108, 92, 231, 0.08);
+  transform: scale(1.02);
+}
+
+.td__upload-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, rgba(108, 92, 231, 0.15), rgba(0, 206, 201, 0.15));
+  color: var(--primary-light);
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
+  justify-content: center;
+  margin: 0 auto 20px;
 }
 
-.td__pdf-btn {
-  font-size: 0.85rem;
-  padding: 10px 20px;
+.td__upload-title {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 8px;
 }
 
-.td__pdf-hint {
-  font-size: 0.8rem;
+.td__upload-subtitle {
   color: var(--text-muted);
+  margin-bottom: 24px;
+  font-size: 0.9rem;
 }
 
-.spinning {
+.td__upload-btn {
+  pointer-events: none;
+}
+
+.td__upload-input {
+  display: none;
+}
+
+/* ===== PROCESSING ===== */
+.td__processing {
+  text-align: center;
+  padding: 60px 20px;
+  opacity: 0;
+  transform: translateY(20px);
+  margin-bottom: 24px;
+}
+
+.td__processing-spinner {
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--border-color);
+  border-top-color: var(--primary);
+  border-radius: 50%;
   animation: spin 1s linear infinite;
+  margin: 0 auto 24px;
 }
 
 @keyframes spin {
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
+}
+
+.td__processing-title {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.td__processing-subtitle {
+  color: var(--text-muted);
+  margin-bottom: 32px;
+}
+
+.td__processing-steps {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+
+.td__processing-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  border-radius: var(--radius-sm);
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  transition: all var(--transition-normal);
+  min-width: 300px;
+}
+
+.td__processing-step--active {
+  color: var(--primary-light);
+  border-color: var(--primary);
+  background: rgba(108, 92, 231, 0.08);
+}
+
+.td__processing-step--done {
+  color: var(--secondary);
+  border-color: var(--secondary);
+  background: rgba(0, 206, 201, 0.08);
+}
+
+.td__processing-step-icon {
+  display: flex;
+  align-items: center;
 }
 
 .td__form-divider {

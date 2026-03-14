@@ -21,6 +21,8 @@ const TeacherDashboard = () => {
   const [questions, setQuestions] = useState([]);
   const [currentQ, setCurrentQ] = useState({ type: 'mcq', question: '', options: ['', '', '', ''], marks: 1 });
   const [processing, setProcessing] = useState(false);
+  const [processingStep, setProcessingStep] = useState(0);
+  const [dragging, setDragging] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
 
@@ -93,17 +95,54 @@ const TeacherDashboard = () => {
       return;
     }
     setError('');
+    
+    // Automatically open create form and set default title if empty
+    setShowCreateForm(true);
+    if (!testTitle) {
+      setTestTitle(`AI Extracted Test - ${new Date().toLocaleDateString()}`);
+    }
+    
     setProcessing(true);
+    
+    gsap.to('.td__upload-zone', { opacity: 0, y: -20, duration: 0.3, onComplete: () => {
+      gsap.to('.td__processing', { opacity: 1, y: 0, duration: 0.5 });
+    }});
+
     try {
+      setProcessingStep(1);
       const text = await extractTextFromPDF(file);
       if (!text.trim()) throw new Error('No text found in the PDF.');
+      
+      setProcessingStep(2);
       const aiQuestions = await simplifyQuestions(text);
+      
+      setProcessingStep(3);
       setQuestions(prev => [...prev, ...aiQuestions.map((q, i) => ({ ...q, id: prev.length + i + 1 }))]);
+      
+      setTimeout(() => {
+        setProcessing(false);
+        setProcessingStep(0);
+        gsap.to('.td__processing', { opacity: 0, duration: 0.2 });
+        gsap.to('.td__upload-zone', { opacity: 1, y: 0, duration: 0.5 });
+      }, 800);
+      
     } catch (err) {
       setError(err.message || 'Failed to process PDF.');
+      setProcessing(false);
+      setProcessingStep(0);
+      gsap.to('.td__processing', { opacity: 0, duration: 0.2 });
+      gsap.to('.td__upload-zone', { opacity: 1, y: 0, duration: 0.5 });
     }
-    setProcessing(false);
   };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    handlePdfUpload(e.dataTransfer.files[0]);
+  };
+
+  const handleDragOver = (e) => { e.preventDefault(); setDragging(true); };
+  const handleDragLeave = () => setDragging(false);
 
   const handleLogout = async () => {
     localStorage.removeItem('examease_role');
@@ -151,6 +190,40 @@ const TeacherDashboard = () => {
 
       {error && <div className="td__error">{error}</div>}
 
+      {/* Standalone PDF Upload Zone (when form is not open) */}
+      {!showCreateForm && (
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
+          <div
+            className={`td__upload-zone ${dragging ? 'td__upload-zone--dragging' : ''}`}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <div className="td__upload-icon">
+              <Upload size={36} />
+            </div>
+            <h3 className="td__upload-title">
+              Quick Create: Drag & drop a PDF exam here
+            </h3>
+            <p className="td__upload-subtitle">
+              AI will automatically extract and format questions into a new test
+            </p>
+            <button className="btn-secondary td__pdf-btn">
+              <FileText size={18} />
+              Browse PDF File
+            </button>
+            <input
+              ref={fileInputRef}
+              className="td__upload-input"
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => handlePdfUpload(e.target.files?.[0])}
+            />
+          </div>
+        </div>
+      )}
+
       {/* Create Test Form */}
       {showCreateForm && (
         <div className="td__create-form glass-card">
@@ -179,28 +252,65 @@ const TeacherDashboard = () => {
             </div>
           </div>
 
-          {/* PDF Upload shortcut */}
-          <div className="td__pdf-upload">
-            <button
-              className="btn-secondary td__pdf-btn"
+          {/* PDF Upload Zone */}
+          {!processing && (
+            <div
+              className={`td__upload-zone ${dragging ? 'td__upload-zone--dragging' : ''}`}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
               onClick={() => fileInputRef.current?.click()}
-              disabled={processing}
             >
-              {processing ? (
-                <><Sparkles size={16} className="spinning" /> AI Processing PDF...</>
-              ) : (
-                <><Upload size={16} /> Import Questions from PDF</>
-              )}
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="application/pdf"
-              style={{ display: 'none' }}
-              onChange={(e) => handlePdfUpload(e.target.files?.[0])}
-            />
-            <span className="td__pdf-hint">Upload a PDF and AI will extract questions automatically</span>
-          </div>
+              <div className="td__upload-icon">
+                <Upload size={36} />
+              </div>
+              <h3 className="td__upload-title">
+                Drag & drop a PDF exam here
+              </h3>
+              <p className="td__upload-subtitle">
+                AI will automatically extract and format questions for your test
+              </p>
+              <button className="btn-secondary td__pdf-btn">
+                <FileText size={18} />
+                Browse PDF File
+              </button>
+              <input
+                ref={fileInputRef}
+                className="td__upload-input"
+                type="file"
+                accept="application/pdf"
+                onChange={(e) => handlePdfUpload(e.target.files?.[0])}
+              />
+            </div>
+          )}
+
+          {processing && (
+            <div className="td__processing">
+              <div className="td__processing-spinner"></div>
+              <h3 className="td__processing-title">AI Processing Document</h3>
+              <p className="td__processing-subtitle">Extracting questions automatically...</p>
+              <div className="td__processing-steps">
+                <div className={`td__processing-step ${processingStep >= 1 ? 'td__processing-step--active' : ''} ${processingStep > 1 ? 'td__processing-step--done' : ''}`}>
+                  <span className="td__processing-step-icon">
+                    {processingStep > 1 ? <Check size={16} /> : <Sparkles size={16} />}
+                  </span>
+                  Extracting text from PDF
+                </div>
+                <div className={`td__processing-step ${processingStep >= 2 ? 'td__processing-step--active' : ''} ${processingStep > 2 ? 'td__processing-step--done' : ''}`}>
+                  <span className="td__processing-step-icon">
+                    {processingStep > 2 ? <Check size={16} /> : <Sparkles size={16} />}
+                  </span>
+                  AI is identifying and formatting questions
+                </div>
+                <div className={`td__processing-step ${processingStep >= 3 ? 'td__processing-step--active' : ''}`}>
+                  <span className="td__processing-step-icon">
+                    {processingStep >= 3 ? <Check size={16} /> : <Sparkles size={16} />}
+                  </span>
+                  Adding to test
+                </div>
+              </div>
+            </div>
+          )}
 
           <hr className="td__form-divider" />
 
