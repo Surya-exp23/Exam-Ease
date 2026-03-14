@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import gsap from 'gsap';
 import { Brain, ArrowLeft, GraduationCap, BookOpen } from 'lucide-react';
@@ -16,7 +16,17 @@ const LoginPage = () => {
   
   const { loginWithGoogle, loginWithEmail, signupWithEmail, user } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const cardRef = useRef(null);
+
+  useEffect(() => {
+    // Check for role query param
+    const params = new URLSearchParams(location.search);
+    const urlRole = params.get('role');
+    if (urlRole === 'student' || urlRole === 'teacher') {
+      setRole(urlRole);
+    }
+  }, [location]);
 
   useEffect(() => {
     if (user && role) {
@@ -26,22 +36,23 @@ const LoginPage = () => {
   }, [user, role, navigate]);
 
   useEffect(() => {
+    // Reveal card body
     gsap.to('.login__card', {
-      opacity: 1,
-      y: 0,
-      duration: 0.8,
-      ease: 'power3.out',
-      delay: 0.2
+      opacity: 1, y: 0, duration: 0.8, ease: 'power3.out', delay: 0.2
     });
-    gsap.to('.login__role-card', {
-      opacity: 1,
-      y: 0,
-      duration: 0.6,
-      stagger: 0.15,
-      ease: 'power3.out',
-      delay: 0.4
-    });
-  }, []);
+
+    if (role) {
+      // If we arrived with a pre-selected role (from URL route), instantly reveal the form
+      gsap.to('.login__form-section', { 
+        opacity: 1, y: 0, duration: 0.6, ease: 'power3.out', delay: 0.3 
+      });
+    } else {
+      // Otherwise stagger reveal the role selection cards
+      gsap.to('.login__role-card', {
+        opacity: 1, y: 0, duration: 0.6, stagger: 0.15, ease: 'power3.out', delay: 0.4
+      });
+    }
+  }, [role]);
 
   const handleRoleSelect = (selectedRole) => {
     setRole(selectedRole);

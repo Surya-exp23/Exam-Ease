@@ -219,11 +219,11 @@ const LandingPage = () => {
             <h3 className="role-card__title">For Students</h3>
             <ul className="role-card__list">
               <li>Take tests created by your teachers</li>
-              <li>Upload your own exam PDF for AI simplification</li>
+              <li>Answer questions hands-free with Voice-to-Text</li>
               <li>Use text-to-speech, translation, focus mode & more</li>
               <li>Dyslexia-friendly fonts and adjustable text size</li>
             </ul>
-            <button className="btn-primary role-card__btn" onClick={() => navigate('/login')}>
+            <button className="btn-primary role-card__btn" onClick={() => navigate('/login?role=student')}>
               I'm a Student <ArrowRight size={16} />
             </button>
           </div>
@@ -238,7 +238,7 @@ const LandingPage = () => {
               <li>Upload PDF to auto-generate simplified tests</li>
               <li>Tests are instantly available for students</li>
             </ul>
-            <button className="btn-secondary role-card__btn" onClick={() => navigate('/login')}>
+            <button className="btn-secondary role-card__btn" onClick={() => navigate('/login?role=teacher')}>
               I'm a Teacher <ArrowRight size={16} />
             </button>
           </div>
