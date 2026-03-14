@@ -1,0 +1,37 @@
+{
+  "matches": 8,
+  "questions": [
+    {
+      "index": 1,
+      "originalQuestion": "What is the capital of France?"
+    },
+    {
+      "index": 2,
+      "originalQuestion": "Explain the process of photosynthesis."
+    },
+    {
+      "index": 3,
+      "originalQuestion": "Write a short note on global warming."
+    },
+    {
+      "index": 4,
+      "originalQuestion": "Describe the water cycle."
+    },
+    {
+      "index": 5,
+      "originalQuestion": "What are the main features of democracy?"
+    },
+    {
+      "index": 6,
+      "originalQuestion": "Solve the equation 2x + 5 = 15."
+    },
+    {
+      "index": 7,
+      "originalQuestion": "Calculate the area of a circle with radius 5 cm."
+    },
+    {
+      "index": 8,
+      "originalQuestion": "Evaluate the function at x=3."
+    }
+  ]
+}

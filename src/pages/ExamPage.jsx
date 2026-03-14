@@ -5,7 +5,7 @@ import { translateText } from '../utils/geminiApi';
 import { stop } from '../utils/ttsHelper';
 import QuestionCard from '../components/QuestionCard';
 import AccessibilityToolbar from '../components/AccessibilityToolbar';
-import { Brain, Send, ArrowLeft } from 'lucide-react';
+import { Brain, Send, ArrowLeft, Clock } from 'lucide-react';
 import './ExamPage.css';
 
 const ExamPage = () => {
@@ -22,6 +22,8 @@ const ExamPage = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [escapeWarned, setEscapeWarned] = useState(false);
   const [showEscPopup, setShowEscPopup] = useState(false);
+  const [timeLimit, setTimeLimit] = useState(null);
+  const [remainingTime, setRemainingTime] = useState(null);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
@@ -99,6 +101,7 @@ const ExamPage = () => {
     const q = location.state?.questions;
     const title = location.state?.testTitle;
     const testId = location.state?.testId;
+    const tLimit = location.state?.timeLimit;
     if (!q || q.length === 0) {
       const role = localStorage.getItem('examease_role');
       navigate(role === 'teacher' ? '/teacher-dashboard' : '/student-dashboard');
@@ -106,7 +109,41 @@ const ExamPage = () => {
     }
     setQuestions(q);
     if (title) setTestTitle(title);
+    if (tLimit > 0) {
+      setTimeLimit(tLimit * 60);
+      setRemainingTime(tLimit * 60);
+    }
   }, [user, location.state, navigate]);
+
+  useEffect(() => {
+    if (!isFullscreen || remainingTime === null) return;
+
+    const timerInterval = setInterval(() => {
+      setRemainingTime(prev => {
+        if (prev <= 1) {
+          clearInterval(timerInterval);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timerInterval);
+  }, [isFullscreen]); // We don't want to reset interval unnecessarily
+
+  useEffect(() => {
+    if (remainingTime === 0) {
+      handleSubmit(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [remainingTime]);
+
+  const formatTime = (seconds) => {
+    if (seconds === null) return '';
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   const handleAnswer = (questionId, answer) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
@@ -241,6 +278,14 @@ const ExamPage = () => {
           </div>
           ExamEase
         </div>
+        
+        {remainingTime !== null && (
+          <div className="exam__timer" style={{ display: 'flex', alignItems: 'center', gap: '8px', fontWeight: 'bold', color: remainingTime < 60 ? '#e74c3c' : 'inherit' }}>
+            <Clock size={16} />
+            <span style={{ fontVariantNumeric: 'tabular-nums' }}>{formatTime(remainingTime)}</span>
+          </div>
+        )}
+
         <div className="exam__progress">
           <div className="exam__progress-bar">
             <div className="exam__progress-fill" style={{ width: `${progress}%` }}></div>

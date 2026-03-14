@@ -1,0 +1,19 @@
+--- RAW TEXT ---
+What is the capital of France?
+A: Berlin
+B: Madrid
+C: Paris
+D: Rome
+
+----------------
+
+--- CLEANED TEXT ---
+What is the capital of France?
+A: Berlin
+B: Madrid
+C: Paris
+D: Rome
+
+----------------
+
+--- EXTRACTED QUESTIONS ---

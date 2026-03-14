@@ -5,7 +5,7 @@ import { getTests } from '../utils/testStore';
 import { extractTextFromPDF } from '../utils/pdfParser';
 import { simplifyQuestions } from '../utils/geminiApi';
 import gsap from 'gsap';
-import { Brain, FileText, LogOut, BookOpen, ArrowRight, User } from 'lucide-react';
+import { Brain, FileText, LogOut, BookOpen, ArrowRight, User, Clock } from 'lucide-react';
 import './StudentDashboard.css';
 
 const StudentDashboard = () => {
@@ -31,7 +31,7 @@ const StudentDashboard = () => {
   }, [user, navigate]);
 
   const handleStartTest = (test) => {
-    navigate('/exam', { state: { questions: test.questions, testTitle: test.title, testId: test.id || test.title } });
+    navigate('/exam', { state: { questions: test.questions, testTitle: test.title, testId: test.id || test.title, timeLimit: test.timeLimit } });
   };
   const handleLogout = async () => {
     localStorage.removeItem('examease_role');
@@ -105,6 +105,12 @@ const StudentDashboard = () => {
                   <span><User size={12} /> {test.createdByName || 'Teacher'}</span>
                   <span>•</span>
                   <span>{test.questions.length} Qs</span>
+                  {test.timeLimit > 0 && (
+                    <>
+                      <span>•</span>
+                      <span><Clock size={12} style={{ verticalAlign: 'middle', marginRight: '2px' }} /> {test.timeLimit}m</span>
+                    </>
+                  )}
                 </div>
                 <div className="sd__test-card-cta">
                   Start Test <ArrowRight size={14} />

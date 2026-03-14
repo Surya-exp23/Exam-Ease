@@ -1,0 +1,33 @@
+{
+  "matches": 7,
+  "questions": [
+    {
+      "index": 1,
+      "originalQuestion": "Describe the OSI model."
+    },
+    {
+      "index": 2,
+      "originalQuestion": "How does TCP work?"
+    },
+    {
+      "index": 3,
+      "originalQuestion": "What is UDP?"
+    },
+    {
+      "index": 4,
+      "originalQuestion": "What is the difference between TCP and UDP?"
+    },
+    {
+      "index": 5,
+      "originalQuestion": "Write a short note on IP."
+    },
+    {
+      "index": 6,
+      "originalQuestion": "Explain routing algorithms.\nQ.7 What is a subnet mask?"
+    },
+    {
+      "index": 7,
+      "originalQuestion": "What is IPv6?"
+    }
+  ]
+}

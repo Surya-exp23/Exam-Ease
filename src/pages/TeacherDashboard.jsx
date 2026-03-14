@@ -18,6 +18,7 @@ const TeacherDashboard = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [testTitle, setTestTitle] = useState('');
   const [testSubject, setTestSubject] = useState('');
+  const [timeLimit, setTimeLimit] = useState('');
   const [questions, setQuestions] = useState([]);
   const [currentQ, setCurrentQ] = useState({ type: 'mcq', question: '', options: ['', '', '', ''], marks: 1 });
   const [processing, setProcessing] = useState(false);
@@ -70,12 +71,14 @@ const TeacherDashboard = () => {
       subject: testSubject,
       createdBy: user.email,
       createdByName: user.displayName || user.email.split('@')[0],
+      timeLimit: parseInt(timeLimit) || 0,
       questions: questions.map((q, i) => ({ ...q, id: i + 1 }))
     });
 
     // Reset form
     setTestTitle('');
     setTestSubject('');
+    setTimeLimit('');
     setQuestions([]);
     setShowCreateForm(false);
     refreshTests();
@@ -248,6 +251,17 @@ const TeacherDashboard = () => {
                 placeholder="e.g., Science, Math, English"
                 value={testSubject}
                 onChange={(e) => setTestSubject(e.target.value)}
+              />
+            </div>
+            <div className="td__form-group">
+              <label className="td__form-label">Time Limit (mins)</label>
+              <input
+                className="td__form-input"
+                type="number"
+                min="0"
+                placeholder="e.g., 30 (0 for no limit)"
+                value={timeLimit}
+                onChange={(e) => setTimeLimit(e.target.value)}
               />
             </div>
           </div>

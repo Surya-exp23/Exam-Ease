@@ -1,0 +1,98 @@
+﻿--- ORIGINAL TEXT ---
+Institute Name: Global Academy
+Date: 12-05-2023
+Max Marks: 50
+Time: 2 hrs
+
+All questions are compulsory.
+Section A
+1. What is the capital of France?
+2. Explain the process of photosynthesis.
+Q3. Write a short note on global warming.
+Question 4: Describe the water cycle.
+Q 5) What are the main features of democracy?
+Part B
+    6) Solve the equation 2x + 5 = 15.
+   7. Calculate the area of a circle with radius 5 cm.
+8 . Evaluate the function at x=3.
+
+--- TEXT AFTER CLEANUP ---
+Time: 2 hrs
+
+1. What is the capital of France?
+2. Explain the process of photosynthesis.
+Q3. Write a short note on global warming.
+Question 4: Describe the water cycle.
+Q 5) What are the main features of democracy?
+    6) Solve the equation 2x + 5 = 15.
+   7. Calculate the area of a circle with radius 5 cm.
+8 . Evaluate the function at x=3.
+
+--- MATCHES (7) ---
+[1] 'What is the capital of France?'
+[2] 'Explain the process of photosynthesis.'
+[3] 'Write a short note on global warming.\nQuestion 4: Describe the water cycle.'
+[4] 'What are the main features of democracy?'
+[5] 'Solve the equation 2x + 5 = 15.'
+[6] 'Calculate the area of a circle with radius 5 cm.'
+[7] 'Evaluate the function at x=3.'
+
+--- FINAL JSON ---
+[
+  {
+    "originalQuestion": "What is the capital of France?",
+    "simplifiedQuestion": "What is the capital of France?",
+    "type": "subjective",
+    "options": [],
+    "marks": 1,
+    "correctAnswer": "Subjective answer - requires teacher review."
+  },
+  {
+    "originalQuestion": "Explain the process of photosynthesis.",
+    "simplifiedQuestion": "Explain the process of photosynthesis.",
+    "type": "subjective",
+    "options": [],
+    "marks": 1,
+    "correctAnswer": "Subjective answer - requires teacher review."
+  },
+  {
+    "originalQuestion": "Write a short note on global warming.\nQuestion 4: Describe the water cycle.",
+    "simplifiedQuestion": "Write a short note on global warming.\nQuestion 4: Describe the water cycle.",
+    "type": "subjective",
+    "options": [],
+    "marks": 1,
+    "correctAnswer": "Subjective answer - requires teacher review."
+  },
+  {
+    "originalQuestion": "What are the main features of democracy?",
+    "simplifiedQuestion": "What are the main features of democracy?",
+    "type": "subjective",
+    "options": [],
+    "marks": 1,
+    "correctAnswer": "Subjective answer - requires teacher review."
+  },
+  {
+    "originalQuestion": "Solve the equation 2x + 5 = 15.",
+    "simplifiedQuestion": "Solve the equation 2x + 5 = 15.",
+    "type": "subjective",
+    "options": [],
+    "marks": 1,
+    "correctAnswer": "Subjective answer - requires teacher review."
+  },
+  {
+    "originalQuestion": "Calculate the area of a circle with radius 5 cm.",
+    "simplifiedQuestion": "Calculate the area of a circle with radius 5 cm.",
+    "type": "subjective",
+    "options": [],
+    "marks": 1,
+    "correctAnswer": "Subjective answer - requires teacher review."
+  },
+  {
+    "originalQuestion": "Evaluate the function at x=3.",
+    "simplifiedQuestion": "Evaluate the function at x=3.",
+    "type": "subjective",
+    "options": [],
+    "marks": 1,
+    "correctAnswer": "Subjective answer - requires teacher review."
+  }
+]

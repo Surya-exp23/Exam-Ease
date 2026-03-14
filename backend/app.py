@@ -1,27 +1,37 @@
 import os
+import json
+import re
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 import pdfplumber
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 try:
-    from transformers import pipeline
-    print("Loading model... this might take a minute on the first run.")
-    generator = pipeline("text2text-generation", model="valhalla/t5-base-qg-hl")
-    print("Model loaded successfully!")
+    from groq import Groq
+    GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
+    if GROQ_API_KEY:
+        client = Groq(api_key=GROQ_API_KEY)
+        print("Groq client initialized successfully!")
+    else:
+        client = None
+        print("Warning: GROQ_API_KEY not found in environment. Groq API will not work.")
 except ImportError:
-    print("Transformers or Torch not found, using Mock AI Generator.")
-    generator = "MOCK"
+    print("Groq library not found. Please install groq.")
+    client = None
 except Exception as e:
-    print(f"Error loading model: {e}")
-    generator = "MOCK"
+    print(f"Error loading Groq client: {e}")
+    client = None
 
 app = Flask(__name__)
 CORS(app)
 
 @app.route('/api/generate', methods=['POST'])
 def generate_questions():
-    if not generator:
-        return jsonify({"error": "Model failed to load"}), 500
+    if not client:
+        return jsonify({"error": "Groq client is not initialized. Please ensure GROQ_API_KEY is set in .env"}), 500
 
     text = ""
     
@@ -49,107 +59,78 @@ def generate_questions():
         return jsonify({"error": "No text could be extracted or provided"}), 400
 
     try:
-        import re
+        sys_prompt = """You are an expert question extractor. Your task is to extract only the actual examination or test questions from the provided text.
+Ignore instructions, maximum marks, university names, and other boilerplate text.
+Do not modify the meaning of the questions.
+Return the questions exactly as they appear in the text in formatting, but strip away any prefix numbers (e.g. '1.', 'Q2)', etc.).
+You must output ONLY valid JSON format with a single key "questions" containing a list of objects.
+Each object should represent one question and must exactly follow this schema:
+{
+  "originalQuestion": "The exact question text extracted without numbering.",
+  "simplifiedQuestion": "The exact question text extracted without numbering.",
+  "type": "subjective",
+  "options": [],
+  "marks": 1,
+  "correctAnswer": "Subjective answer - requires teacher review."
+}
+Do not include markdown blocks, explanations, or any text other than the JSON object."""
         
-        # 1. Clean up unwanted common question paper artifacts
-        marks_pattern = r'\[\s*\d+\s*(?:marks?|m)?\s*\]|\(\s*\d+\s*(?:marks?|m)?\s*\)|\b\d+\s*marks?\b'
-        text = re.sub(marks_pattern, '', text, flags=re.IGNORECASE)
+        user_prompt = f"Extract the questions from the following text and return as JSON:\n\n{text}"
         
-        # Remove empty blanks like "________"
-        text = re.sub(r'_{3,}', '', text)
+        response = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            model="llama-3.3-70b-versatile",
+            temperature=0.1,
+            response_format={"type": "json_object"}
+        )
         
-        unwanted_phrases = [
-            "institute name", "student name", "roll no", "date:", "time allowed",
-            "maximum marks", "max marks", "total marks", "fill in the blanks",
-            "state true or false", "multiple choice questions", "answer the following questions",
-            "answer the following", "all questions are compulsory", "section a", "section b",
-            "section c", "section d", "section e", "part a", "part b", "part c", "part d", "part e"
-        ]
-        text_lines = text.split('\n')
-        cleaned_lines = []
-        for line in text_lines:
-            lower_line = line.lower()
-            if any(phrase in lower_line for phrase in unwanted_phrases) and len(lower_line) < 100:
-                continue
-            cleaned_lines.append(line)
-        text = '\n'.join(cleaned_lines)
-
-        for phrase in unwanted_phrases:
-            text = re.sub(r'(?i)' + re.escape(phrase) + r'[.\-:]?\s*', '', text)
+        response_content = response.choices[0].message.content
+        
+        try:
+            parsed_data = json.loads(response_content)
+            questions = parsed_data.get("questions", [])
             
-        # 2. Match question numbers -> creating individual questions
-        # Use robust regex to find main questions (e.g., "1.", "Q1.", "Question 1)") at start of line or after spaces,
-        # but avoid matching sub-parts like "a)", "i)".
-        split_pattern = r'(?:^|\n|\s{2,})(?:Q(?:uestion)?\.?\s*\d{1,3}|\d{1,3})\s*[\.\)-]\s*'
-        
-        matches = list(re.finditer(split_pattern, text))
-        raw_questions = []
-        
-        if len(matches) > 0:
-            for i in range(len(matches)):
-                start_idx = matches[i].end()
-                end_idx = matches[i+1].start() if i + 1 < len(matches) else len(text)
+            # Format questions with IDs
+            formatted_questions = []
+            for i, q in enumerate(questions):
+                # Ensure all required fields exist
+                formatted_questions.append({
+                    "id": i + 1,
+                    "originalQuestion": q.get("originalQuestion", ""),
+                    "simplifiedQuestion": q.get("simplifiedQuestion", q.get("originalQuestion", "")),
+                    "type": q.get("type", "subjective"),
+                    "options": q.get("options", []),
+                    "marks": q.get("marks", 1),
+                    "correctAnswer": q.get("correctAnswer", "Subjective answer - requires teacher review.")
+                })
                 
-                # The text of the question (the number is automatically skipped because start_idx is after the match)
-                q_text = text[start_idx:end_idx].strip()
+            if not formatted_questions:
+                formatted_questions.append({
+                    "id": 1,
+                    "originalQuestion": "No explicit questions could be extracted. Please check the document.",
+                    "simplifiedQuestion": "No explicit questions could be extracted.",
+                    "type": "subjective",
+                    "options": [],
+                    "marks": 1
+                })
                 
-                # Clean up multiple newlines or arbitrary spaces
-                q_text = re.sub(r'\n+', '\n', q_text)
-                
-                # Strip out any lingering duplicate numbering if it somehow snuck in
-                q_text = re.sub(r'^\s*(?:Q(?:uestion)?\.?\s*\d{1,3}|\d{1,3})\s*[\.\)-]\s*', '', q_text)
-                
-                if len(q_text) > 2:
-                    raw_questions.append({
-                        "originalQuestion": q_text,
-                        "simplifiedQuestion": q_text,
-                        "type": "subjective",
-                        "options": [],
-                        "marks": 1,
-                        "correctAnswer": "Subjective answer - requires teacher review."
-                    })
-        else:
-            # Fallback for when no explicit numbers are found, extract based on sentences ending in ?
-            # This ensures we purely copy from document without generating AI questions.
-            sentences = re.split(r'(?<=\?)\s+', text)
-            for s in sentences:
-                s_clean = s.strip()
-                if len(s_clean) > 5 and '?' in s_clean:
-                    s_clean = re.sub(r'^\s*(?:Q(?:uestion)?\.?\s*\d{1,3}|\d{1,3})\s*[\.\)-]\s*', '', s_clean)
-                    raw_questions.append({
-                        "originalQuestion": s_clean,
-                        "simplifiedQuestion": s_clean,
-                        "type": "subjective",
-                        "options": [],
-                        "marks": 1,
-                        "correctAnswer": "Subjective answer - requires teacher review."
-                    })
-
-        formatted_questions = []
-        for i, q in enumerate(raw_questions):
-            q["id"] = i + 1
-            formatted_questions.append(q)
+            return jsonify({"questions": formatted_questions})
             
-        if not formatted_questions:
-            formatted_questions.append({
-                "id": 1,
-                "originalQuestion": "No explicit questions could be extracted. Please ensure the document contains numbered questions or question marks.",
-                "simplifiedQuestion": "No explicit questions could be extracted.",
-                "type": "subjective",
-                "options": [],
-                "marks": 1
-            })
+        except json.JSONDecodeError:
+            print(f"Failed to parse JSON from response: {response_content}")
+            return jsonify({"error": "Failed to extract structured questions from the LLM response"}), 500
             
-        return jsonify({"questions": formatted_questions})
-        
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return jsonify({"error": f"Error generating questions: {str(e)}"}), 500
+        return jsonify({"error": f"Error generating questions via Groq API: {str(e)}"}), 500
 
 @app.route('/health', methods=['GET'])
 def health_check():
-    return jsonify({"status": "ok", "model_loaded": generator is not None})
+    return jsonify({"status": "ok", "api_ready": client is not None})
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)
