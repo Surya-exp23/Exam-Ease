@@ -20,24 +20,75 @@ const ExamPage = () => {
   const [translating, setTranslating] = useState(false);
   const [showConfirmSubmit, setShowConfirmSubmit] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [escapeWarned, setEscapeWarned] = useState(false);
+  const [showEscPopup, setShowEscPopup] = useState(false);
 
   useEffect(() => {
     const handleFullscreenChange = () => {
-      setIsFullscreen(document.fullscreenElement !== null);
+      const isCurrentlyFullscreen = document.fullscreenElement !== null;
+      setIsFullscreen(isCurrentlyFullscreen);
+
+      // If they EXIT fullscreen while taking a test, that's a strike
+      if (!isCurrentlyFullscreen && questions.length > 0) {
+        if (!escapeWarned) {
+          // First strike: Warn them, speak, and try to force them back in
+          setEscapeWarned(true);
+          setShowEscPopup(true);
+          speak("Clicking one more time ESC button will submit the test");
+          
+          setTimeout(() => setShowEscPopup(false), 5000);
+        } else {
+          // Second strike: Auto Submit
+          handleSubmit(true);
+        }
+      }
     };
+    
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questions, escapeWarned]);
 
   const requestFullscreen = async () => {
     try {
       if (document.documentElement.requestFullscreen) {
         await document.documentElement.requestFullscreen();
+        if (navigator.keyboard && navigator.keyboard.lock) {
+          try {
+            await navigator.keyboard.lock(['Escape']);
+          } catch (e) {
+            console.warn('Keyboard lock failed:', e);
+          }
+        }
       }
     } catch (err) {
       console.error("Error attempting to enable fullscreen:", err);
     }
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        
+        if (!escapeWarned) {
+          setEscapeWarned(true);
+          setShowEscPopup(true);
+          speak("Clicking one more time ESC button will submit the test");
+          setTimeout(() => setShowEscPopup(false), 5000);
+        } else {
+          handleSubmit(true);
+        }
+      }
+    };
+
+    if (isFullscreen && questions.length > 0) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isFullscreen, escapeWarned, questions]);
 
   useEffect(() => {
     if (!user) {
@@ -47,6 +98,7 @@ const ExamPage = () => {
     
     const q = location.state?.questions;
     const title = location.state?.testTitle;
+    const testId = location.state?.testId;
     if (!q || q.length === 0) {
       const role = localStorage.getItem('examease_role');
       navigate(role === 'teacher' ? '/teacher-dashboard' : '/student-dashboard');
@@ -85,8 +137,8 @@ const ExamPage = () => {
     setTranslations({});
   };
 
-  const handleSubmit = () => {
-    if (answeredCount < questions.length && !showConfirmSubmit) {
+  const handleSubmit = (isAutoSubmit = false) => {
+    if (isAutoSubmit !== true && answeredCount < questions.length && !showConfirmSubmit) {
       setShowConfirmSubmit(true);
       return;
     }
@@ -104,10 +156,23 @@ const ExamPage = () => {
         questions, 
         answers, 
         testTitle: testTitle || "Your Exam",
-        userName: user?.displayName || user?.email?.split('@')[0] || "Student"
+        testId: location.state?.testId,
+        userName: user?.displayName || user?.email?.split('@')[0] || "Student",
+        tabSwitched: isAutoSubmit === true
       } 
     });
   };
+
+  useEffect(() => {
+    const checkVisibility = () => {
+      if (document.visibilityState === 'hidden' && questions.length > 0 && isFullscreen) {
+        handleSubmit(true);
+      }
+    };
+    document.addEventListener('visibilitychange', checkVisibility);
+    return () => document.removeEventListener('visibilitychange', checkVisibility);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [questions, answers, testTitle, isFullscreen, showConfirmSubmit]);
 
   const answeredCount = Object.keys(answers).length;
   const progress = questions.length > 0 ? (answeredCount / questions.length) * 100 : 0;
@@ -156,6 +221,18 @@ const ExamPage = () => {
 
   return (
     <div className="exam">
+      {/* ESC Warning Popup */}
+      {showEscPopup && (
+        <div className="exam__esc-popup">
+          <div className="exam__esc-popup-content">
+            <span className="exam__esc-icon">⚠️</span>
+            <p className="exam__esc-text">
+              Clicking one more time ESC button will submit the test
+            </p>
+          </div>
+        </div>
+      )}
+
       {/* Nav */}
       <nav className="exam__nav">
         <div className="exam__nav-logo">

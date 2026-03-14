@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import gsap from 'gsap';
 import { LogOut } from 'lucide-react';
+import { speak } from '../utils/ttsHelper';
 import './CompletionPage.css';
 
 const TOTAL_SECONDS = 5 * 60; // 5 minutes
@@ -10,14 +11,29 @@ const TOTAL_SECONDS = 5 * 60; // 5 minutes
 const CompletionPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
   const [timeLeft, setTimeLeft] = useState(TOTAL_SECONDS);
   const [showSolutions, setShowSolutions] = useState(false);
   const intervalRef = useRef(null);
 
-  const { questions, answers, testTitle, userName } = location.state || {};
+  const { questions, answers, testTitle, testId, userName, tabSwitched } = location.state || {};
 
   useEffect(() => {
+    // Mark test as completed in local storage
+    if (user && (user.email || user.uid) && testId) {
+      const storageKey = `examease_completed_${user.email || user.uid}`;
+      const completedIds = JSON.parse(localStorage.getItem(storageKey) || '[]');
+      if (!completedIds.includes(testId)) {
+        completedIds.push(testId);
+        localStorage.setItem(storageKey, JSON.stringify(completedIds));
+      }
+    }
+
+    if (tabSwitched) {
+      speak("Your test is submitted as you changed the tab");
+    }
+
+
     // Entrance animations
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
     tl.to('.completion__card', { opacity: 1, scale: 1, duration: 0.8, delay: 0.2 })
@@ -29,7 +45,9 @@ const CompletionPage = () => {
       .to('.completion__logout', { opacity: 1, y: 0, duration: 0.6 }, '-=0.3');
 
     // Create confetti
-    createConfetti();
+    if (!tabSwitched) {
+      createConfetti();
+    }
 
     // Timer countdown
     intervalRef.current = setInterval(() => {
@@ -100,13 +118,21 @@ const CompletionPage = () => {
       <div className="completion__bg-orb completion__bg-orb--2"></div>
 
       <div className="completion__card">
-        <div className="completion__emoji">🎉</div>
+        <div className="completion__emoji">{tabSwitched ? '⚠️' : '🎉'}</div>
         <h1 className="completion__title">
           <span className="premium-text">Great Job, {userName || "Student"}!</span>
         </h1>
         <p className="completion__message">
-          You have successfully completed {testTitle || "your exam paper"}. 
-          We're proud of your effort and determination!
+          {tabSwitched ? (
+            <span style={{ color: '#ff7675', fontWeight: 'bold' }}>
+              Your test is submitted as you changed the tab.
+            </span>
+          ) : (
+            <>
+              You have successfully completed {testTitle || "your exam paper"}. 
+              We're proud of your effort and determination!
+            </>
+          )}
         </p>
         <p className="completion__motivation">
           ✨ Good luck for your upcoming papers — you've got this! ✨

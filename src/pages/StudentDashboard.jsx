@@ -16,8 +16,13 @@ const StudentDashboard = () => {
 
   useEffect(() => {
     if (!user) { navigate('/login'); return; }
-
-    setAvailableTests(getTests());
+    const storageKey = `examease_completed_${user.email || user.uid}`;
+    const completedIds = JSON.parse(localStorage.getItem(storageKey) || '[]');
+    const allTests = getTests();
+    setAvailableTests(allTests.filter(t => {
+      const identifier = t.id || t.title;
+      return !completedIds.includes(identifier);
+    }));
 
     gsap.to('.sd__welcome', { opacity: 1, y: 0, duration: 0.6, delay: 0.2 });
     gsap.to('.sd__title', { opacity: 1, y: 0, duration: 0.8, delay: 0.3 });
@@ -26,7 +31,7 @@ const StudentDashboard = () => {
   }, [user, navigate]);
 
   const handleStartTest = (test) => {
-    navigate('/exam', { state: { questions: test.questions, testTitle: test.title } });
+    navigate('/exam', { state: { questions: test.questions, testTitle: test.title, testId: test.id || test.title } });
   };
   const handleLogout = async () => {
     localStorage.removeItem('examease_role');
