@@ -1,11 +1,14 @@
 import { useState, useRef, useEffect } from 'react';
 import { speak, stop } from '../utils/ttsHelper';
-import { Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
+import { Volume2, VolumeX, Mic, MicOff, Wand2 } from 'lucide-react';
+import { simplifyFurther } from '../utils/geminiApi';
 
 const QuestionCard = ({ question, index, answer, onAnswer, isActive, onTranslate, translatedText }) => {
   const [speakingTarget, setSpeakingTarget] = useState(null); // 'question', 0, 1, 2...
   const [activeWordIndex, setActiveWordIndex] = useState(-1);
   const [isListening, setIsListening] = useState(false);
+  const [deepSimplifiedText, setDeepSimplifiedText] = useState('');
+  const [isSimplifying, setIsSimplifying] = useState(false);
   const recognitionRef = useRef(null);
 
   const toggleListening = () => {
@@ -68,6 +71,20 @@ const QuestionCard = ({ question, index, answer, onAnswer, isActive, onTranslate
       }
     };
   }, []);
+
+  const handleSimplifyFurther = async () => {
+    if (deepSimplifiedText) return; // already simplified
+    setIsSimplifying(true);
+    try {
+      const text = await simplifyFurther(question.simplifiedQuestion || question.originalQuestion);
+      setDeepSimplifiedText(text);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to simplify question. Please try again.");
+    } finally {
+      setIsSimplifying(false);
+    }
+  };
 
   const handleSpeak = (target, text) => {
     if (speakingTarget === target) {
@@ -191,6 +208,26 @@ const QuestionCard = ({ question, index, answer, onAnswer, isActive, onTranslate
             <p>{question.originalQuestion}</p>
           </details>
         )}
+
+        <div style={{ marginTop: '16px', background: 'var(--bg-glass)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-color)' }}>
+          {!deepSimplifiedText ? (
+            <button 
+              onClick={handleSimplifyFurther}
+              disabled={isSimplifying}
+              style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'transparent', border: 'none', color: 'var(--primary)', cursor: isSimplifying ? 'not-allowed' : 'pointer', fontWeight: 'bold' }}
+            >
+              <Wand2 size={16} /> 
+              {isSimplifying ? 'Simplifying...' : 'Simplify Question'}
+            </button>
+          ) : (
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--primary)', fontWeight: 'bold', marginBottom: '8px' }}>
+                <Wand2 size={16} /> Simplified Explanation:
+              </div>
+              <p style={{ margin: 0, lineHeight: '1.6', fontSize: '0.95em' }}>{deepSimplifiedText}</p>
+            </div>
+          )}
+        </div>
 
         {question.type === 'mcq' && question.options?.length > 0 ? (
           <div className="question-card__options" style={{ marginTop: '20px' }}>

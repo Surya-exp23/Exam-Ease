@@ -1,3 +1,6 @@
+
+
+
 import os
 import json
 import re
@@ -127,6 +130,43 @@ Do not include markdown blocks, explanations, or any text other than the JSON ob
         import traceback
         traceback.print_exc()
         return jsonify({"error": f"Error generating questions via Groq API: {str(e)}"}), 500
+
+@app.route('/api/simplify', methods=['POST'])
+def simplify_question():
+    if not client:
+        return jsonify({"error": "Groq client is not initialized. Please ensure GROQ_API_KEY is set in .env"}), 500
+
+    data = request.json or {}
+    text = data.get('text', '')
+    
+    if not text.strip():
+        return jsonify({"error": "No text provided to simplify"}), 400
+
+    try:
+        sys_prompt = """You are a helpful tutor. A student is struggling to understand this exam question.
+Your task is ONLY to rewrite the question in much simpler, easier-to-understand terminology.
+CRITICAL INSTRUCTIONS:
+1. Do NOT answer the question.
+2. Only provide the simplified question.
+3. Keep your response concise, without any conversational filler or introductions.
+4. If the question is already very simple and cannot be simplified further, just return it exactly as it is."""
+        user_prompt = f"Simplify this question clearly: {text}"
+        
+        response = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": sys_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            model="llama-3.3-70b-versatile",
+            temperature=0.3,
+        )
+        
+        simplified_text = response.choices[0].message.content.strip()
+        return jsonify({"simplifiedText": simplified_text})
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": f"Error simplifying question via Groq API: {str(e)}"}), 500
 
 @app.route('/health', methods=['GET'])
 def health_check():

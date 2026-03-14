@@ -81,3 +81,29 @@ export async function translateText(text, targetLang) {
     return d.responseData?.translatedText || text;
   }
 }
+
+/**
+ * Call the backend to get a simpler explanation of a question
+ * @param {string} text - The question text
+ * @returns {Promise<string>} - Simplified explanation
+ */
+export async function simplifyFurther(text) {
+  try {
+    const response = await fetch('http://localhost:5000/api/simplify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.error || 'Failed to call local Python backend');
+    }
+    
+    const data = await response.json();
+    return data.simplifiedText || text;
+  } catch (error) {
+    console.error('Error simplifying question:', error);
+    throw new Error('Failed to simplify. ' + error.message);
+  }
+}
