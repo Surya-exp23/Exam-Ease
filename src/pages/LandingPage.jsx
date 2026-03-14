@@ -26,10 +26,9 @@ const LandingPage = () => {
         .to('.hero__buttons', { opacity: 1, y: 0, duration: 0.8 }, '-=0.4')
         .to('.hero__scroll-indicator', { opacity: 1, duration: 0.6 }, '-=0.2');
 
-      // Floating orbs animation
-      gsap.to('.hero__orb--1', { x: 30, y: -20, duration: 6, repeat: -1, yoyo: true, ease: 'sine.inOut' });
-      gsap.to('.hero__orb--2', { x: -20, y: 30, duration: 8, repeat: -1, yoyo: true, ease: 'sine.inOut' });
-      gsap.to('.hero__orb--3', { x: 20, y: -30, duration: 7, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+      // Floating mock phones animation
+      gsap.to('.hero__mock-phone--back', { y: -15, duration: 4, repeat: -1, yoyo: true, ease: 'sine.inOut' });
+      gsap.to('.hero__mock-phone--front', { y: 15, duration: 5, repeat: -1, yoyo: true, ease: 'sine.inOut', delay: 1 });
 
       // Features section
       gsap.to('.features__label', { 
@@ -122,92 +121,83 @@ const LandingPage = () => {
 
       {/* Hero */}
       <section className="hero" ref={heroRef}>
-        <div className="hero__bg-orbs">
-          <div className="hero__orb hero__orb--1"></div>
-          <div className="hero__orb hero__orb--2"></div>
-          <div className="hero__orb hero__orb--3"></div>
-        </div>
         <div className="hero__content">
           <div className="hero__badge">
             <span className="hero__badge-dot"></span>
-            AI-Powered Exam Assistance
+            AI-POWERED EXAM ASSISTANCE !
           </div>
           <h1 className="hero__title">
-            Exams Made <span className="premium-text">Simple</span> for Every Learner
+            Best <span className="premium-text">accessible</span><br/> testing platform<br/> for every student.
           </h1>
+          <div className="hero__social-proof">
+            <div className="hero__avatars">
+              <div className="avatar avatar--1"></div>
+              <div className="avatar avatar--2"></div>
+              <div className="avatar avatar--3"></div>
+            </div>
+            <div className="hero__proof-text">
+              <strong>168K+</strong>
+              <span>Students Helped</span>
+            </div>
+          </div>
           <p className="hero__subtitle">
-            ExamEase uses artificial intelligence to simplify exam questions, 
-            read them aloud, and create a focused, accessible environment — 
-            empowering dyslexic students to show their true potential.
+            ExamEase leverages advanced local AI to instantly translate complex exam papers into clear, dyslexia-friendly formats. Assess knowledge, not reading ability.
           </p>
           <div className="hero__buttons">
             <button className="btn-primary" onClick={() => navigate('/login')}>
-              Start Your Exam <ArrowRight size={18} />
+               <ArrowRight size={18} />
             </button>
-            <button className="btn-secondary" onClick={() => {
-              document.querySelector('.features').scrollIntoView({ behavior: 'smooth' });
-            }}>
-              <Sparkles size={18} />
-              See Features
-            </button>
+            <span className="hero__button-label">Explore the platform features and get started today.</span>
           </div>
         </div>
-        <div className="hero__scroll-indicator">
-          <span>Scroll to explore</span>
-          <div className="hero__scroll-line"></div>
+        
+        <div className="hero__graphics">
+          <div className="hero__background-text">EXAM</div>
+          <div className="hero__mock-phone hero__mock-phone--back">
+             <div className="mock-card"><Sparkles size={20}/> <span>Translating</span></div>
+             <div className="mock-card"><Volume2 size={20}/> <span>Dictation Active</span></div>
+          </div>
+          <div className="hero__mock-phone hero__mock-phone--front">
+             <div className="mock-card mock-card--primary"><Brain size={20}/> <span>AI Simplify</span></div>
+             <div className="mock-chart"></div>
+          </div>
         </div>
       </section>
 
       {/* Features */}
       <section className="features" ref={featuresRef}>
-        <div className="features__header">
-          <p className="features__label">Why ExamEase?</p>
+        <div className="features__header-split">
           <h2 className="features__title">
-            Built with <span className="premium-text">Accessibility</span> First
+            Your <span className="premium-text">trusted</span> partner for<br/> accessible testing.
           </h2>
           <p className="features__subtitle">
-            Every feature is designed to reduce cognitive load and make exams fair for everyone.
+            ExamEase unites and secures a growing ecosystem of specialized tools designed specifically to help neurodivergent students succeed.
           </p>
         </div>
-        <div className="features__grid">
-          <div className="feature-card">
-            <div className="feature-card__icon feature-card__icon--purple">
-              <Brain size={28} />
-            </div>
-            <h3 className="feature-card__title">AI Question Simplification</h3>
+        
+        <div className="features__grid-staggered">
+          <div className="feature-card feature-card--side">
+            <span className="feature-card__number">01.</span>
+            <h3 className="feature-card__title">Intelligent Simplification</h3>
             <p className="feature-card__desc">
-              Complex questions are automatically rewritten into clear, simple language 
-              that's easier to understand — without changing the meaning.
+              Transform verbose, convoluted questions into clear language instantly without changing the core academic meaning.
             </p>
           </div>
-          <div className="feature-card">
-            <div className="feature-card__icon feature-card__icon--teal">
-              <Volume2 size={28} />
-            </div>
-            <h3 className="feature-card__title">Text-to-Speech</h3>
+          
+          <div className="feature-card feature-card--center">
+            <span className="feature-card__number">02.</span>
+            <h3 className="feature-card__title">Immersive Dictation</h3>
             <p className="feature-card__desc">
-              Every question can be read aloud at a comfortable pace. 
-              Listening while reading helps improve comprehension.
+              Experience exams dynamically. Every question and option can be dictated aloud at adjustable speeds to supplement reading.
             </p>
+            <button className="feature-card__btn" onClick={() => navigate('/login')}>Learn More <ArrowRight size={14}/></button>
           </div>
-          <div className="feature-card">
-            <div className="feature-card__icon feature-card__icon--pink">
-              <Languages size={28} />
-            </div>
-            <h3 className="feature-card__title">Multi-Language Support</h3>
+          
+          <div className="feature-card feature-card--side feature-card--right">
+            <span className="feature-card__number">03.</span>
+            <h3 className="feature-card__title">Tailored Visual Engine</h3>
             <p className="feature-card__desc">
-              Translate questions into your native language for better understanding. 
-              Supports 15+ languages including Hindi, Spanish, and French.
-            </p>
-          </div>
-          <div className="feature-card">
-            <div className="feature-card__icon feature-card__icon--yellow">
-              <ZoomIn size={28} />
-            </div>
-            <h3 className="feature-card__title">Customizable Display</h3>
-            <p className="feature-card__desc">
-              Enlarge text, switch to dyslexia-friendly fonts, enable dark mode, 
-              or use focus mode — customize your exam experience.
+              Take full control. Toggle Dyslexia anti-flip fonts, engage high-contrast mode, or isolate questions using cinematic Focus Mode.
             </p>
           </div>
         </div>
@@ -267,22 +257,22 @@ const LandingPage = () => {
           <div className="step">
             <div className="step__number">1</div>
             <div className="step__content">
-              <h3>Upload Your Exam</h3>
-              <p>Drag and drop your exam PDF or choose a test created by your teacher. Our system handles everything automatically.</p>
+              <h3>Upload & <span className="premium-text">Analyze</span></h3>
+              <p>Teachers or students upload standard PDF exam papers. Our system securely extracts the raw text while preserving the fundamental structure of the document.</p>
             </div>
           </div>
           <div className="step">
             <div className="step__number">2</div>
             <div className="step__content">
-              <h3>AI Simplifies Questions</h3>
-              <p>Google Gemini AI rewrites each question in clear, simple language — identifying MCQs and written questions.</p>
+              <h3>AI <span className="premium-text">Processing Engine</span></h3>
+              <p>Our localized Machine Learning models logically restructure complex paragraphs into digestible sentences, randomly extracting MCQs and Subjective prompts dynamically.</p>
             </div>
           </div>
           <div className="step">
             <div className="step__number">3</div>
             <div className="step__content">
-              <h3>Take Your Exam Comfortably</h3>
-              <p>Use text-to-speech, translation, focus mode, and more to complete your exam at your own pace.</p>
+              <h3>Accessible <span className="premium-text">Execution</span></h3>
+              <p>The student enters a heavily customized, full-screen lockdown environment complete with dyslexia-optimized fonts, focus mode, and auditory translation tools.</p>
             </div>
           </div>
         </div>

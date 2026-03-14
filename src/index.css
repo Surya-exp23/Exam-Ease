@@ -2,43 +2,43 @@
 @import url('https://fonts.cdnfonts.com/css/opendyslexic');
 
 :root {
-  /* Color Palette */
-  --primary: #6C5CE7;
-  --primary-light: #A29BFE;
-  --primary-dark: #5A4BD1;
-  --secondary: #00CEC9;
-  --secondary-light: #55EFC4;
-  --accent: #FD79A8;
-  --accent-light: #FDCB6E;
+  /* Color Palette - Crypto Theme */
+  --primary: #7993ba; /* Steel blue */
+  --primary-light: #9db2d4;
+  --primary-dark: #587399;
+  --secondary: #1b2a49; /* Deep Navy text */
+  --secondary-light: #2c4270;
+  --accent: #dca85b;
+  --accent-light: #f5c782;
 
   /* Backgrounds */
-  --bg-primary: #0F0E17;
-  --bg-secondary: #1A1A2E;
-  --bg-card: rgba(255, 255, 255, 0.05);
-  --bg-card-hover: rgba(255, 255, 255, 0.1);
-  --bg-glass: rgba(255, 255, 255, 0.08);
+  --bg-primary: #fdfaf1; /* Cream */
+  --bg-secondary: #f4efe4; 
+  --bg-card: #ffffff;
+  --bg-card-hover: #f9f9f9;
+  --bg-glass: rgba(255, 255, 255, 0.6);
 
   /* Text */
-  --text-primary: #FFFFFE;
-  --text-secondary: #A7A9BE;
-  --text-muted: #72757E;
+  --text-primary: #1b2a49; /* Navy */
+  --text-secondary: #4a5568; 
+  --text-muted: #718096;
 
   /* Borders */
-  --border-color: rgba(255, 255, 255, 0.1);
-  --border-glow: rgba(108, 92, 231, 0.4);
+  --border-color: rgba(27, 42, 73, 0.1);
+  --border-glow: rgba(121, 147, 186, 0.4);
 
   /* Sizing */
   --font-size-base: 16px;
   --font-size-scale: 1;
-  --radius: 16px;
-  --radius-sm: 8px;
-  --radius-lg: 24px;
+  --radius: 20px;
+  --radius-sm: 30px; /* Pill shaped buttons */
+  --radius-lg: 30px;
 
   /* Shadows */
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.4);
-  --shadow-glow: 0 0 30px rgba(108, 92, 231, 0.3);
+  --shadow-sm: 0 4px 12px rgba(27, 42, 73, 0.04);
+  --shadow-md: 0 10px 30px rgba(27, 42, 73, 0.08);
+  --shadow-lg: 0 20px 50px rgba(27, 42, 73, 0.12);
+  --shadow-glow: 0 0 30px rgba(121, 147, 186, 0.3);
 
   /* Transitions */
   --transition-fast: 0.2s ease;
@@ -49,20 +49,33 @@
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
-/* Light Mode */
-body.light-mode {
-  --bg-primary: #F8F9FE;
-  --bg-secondary: #FFFFFF;
-  --bg-card: rgba(108, 92, 231, 0.06);
-  --bg-card-hover: rgba(108, 92, 231, 0.12);
-  --bg-glass: rgba(255, 255, 255, 0.7);
-  --text-primary: #2D3436;
-  --text-secondary: #636E72;
-  --text-muted: #B2BEC3;
-  --border-color: rgba(0, 0, 0, 0.08);
-  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.06);
-  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.12);
+/* Dark Mode */
+body.dark-mode {
+  --primary: #6C5CE7;
+  --primary-light: #A29BFE;
+  --primary-dark: #5A4BD1;
+  --secondary: #00CEC9;
+  --secondary-light: #55EFC4;
+  --accent: #FD79A8;
+  --accent-light: #FDCB6E;
+
+  --bg-primary: #0F0E17;
+  --bg-secondary: #1A1A2E;
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --bg-card-hover: rgba(255, 255, 255, 0.1);
+  --bg-glass: rgba(255, 255, 255, 0.08);
+
+  --text-primary: #FFFFFE;
+  --text-secondary: #A7A9BE;
+  --text-muted: #72757E;
+
+  --border-color: rgba(255, 255, 255, 0.1);
+  --border-glow: rgba(108, 92, 231, 0.4);
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 20px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 40px rgba(0, 0, 0, 0.4);
+  --shadow-glow: 0 0 30px rgba(108, 92, 231, 0.3);
 }
 
 /* Dyslexia Font Toggle */
