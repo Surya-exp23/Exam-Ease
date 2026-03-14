@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import gsap from 'gsap';
 import { LogOut } from 'lucide-react';
@@ -9,9 +9,13 @@ const TOTAL_SECONDS = 5 * 60; // 5 minutes
 
 const CompletionPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { logout } = useAuth();
   const [timeLeft, setTimeLeft] = useState(TOTAL_SECONDS);
+  const [showSolutions, setShowSolutions] = useState(false);
   const intervalRef = useRef(null);
+
+  const { questions, answers, testTitle, userName } = location.state || {};
 
   useEffect(() => {
     // Entrance animations
@@ -98,10 +102,10 @@ const CompletionPage = () => {
       <div className="completion__card">
         <div className="completion__emoji">🎉</div>
         <h1 className="completion__title">
-          <span className="premium-text">You Did It!</span>
+          <span className="premium-text">Great Job, {userName || "Student"}!</span>
         </h1>
         <p className="completion__message">
-          You have successfully completed your exam paper. 
+          You have successfully completed {testTitle || "your exam paper"}. 
           We're proud of your effort and determination!
         </p>
         <p className="completion__motivation">
@@ -121,9 +125,41 @@ const CompletionPage = () => {
           </div>
         </div>
 
-        <button className="btn-primary completion__logout" onClick={handleLogout}>
-          <LogOut size={18} /> Exit Session
-        </button>
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap', marginTop: '10px' }}>
+          {questions && (
+            <button className="btn-secondary" onClick={() => setShowSolutions(!showSolutions)}>
+              {showSolutions ? 'Hide Solutions' : 'View Solutions & Answers'}
+            </button>
+          )}
+          <button className="btn-primary completion__logout" onClick={handleLogout} style={{ marginTop: 0 }}>
+            <LogOut size={18} /> Exit Session
+          </button>
+        </div>
+
+        {showSolutions && questions && (
+          <div className="completion__solutions" style={{ marginTop: '30px', textAlign: 'left', background: 'var(--bg)', padding: '20px', borderRadius: '12px', border: '1px solid var(--border-color)', maxHeight: '400px', overflowY: 'auto' }}>
+            <h2 style={{ marginBottom: '16px', fontSize: '1.2rem', color: 'var(--text-primary)' }}>Solutions</h2>
+            {questions.map((q, i) => {
+              const userAnswer = answers?.[q.id] || "Not answered";
+              const isMCQ = q.type === 'mcq';
+              const isCorrect = isMCQ && userAnswer === q.correctAnswer;
+              
+              return (
+                <div key={q.id} style={{ marginBottom: '20px', paddingBottom: '15px', borderBottom: '1px solid var(--border-color)' }}>
+                  <p style={{ fontWeight: '600', marginBottom: '8px', color: 'var(--primary-light)' }}>
+                    Q{i+1}: {q.simplifiedQuestion}
+                  </p>
+                  <p style={{ color: 'var(--text-secondary)', marginBottom: '4px', fontSize: '0.95rem' }}>
+                    <strong>Your Answer:</strong> <span style={{ color: isCorrect ? '#00cec9' : (isMCQ && userAnswer !== 'Not answered' ? '#ff7675' : 'inherit') }}>{userAnswer}</span>
+                  </p>
+                  <p style={{ color: 'var(--text-primary)', fontSize: '0.95rem' }}>
+                    <strong>Correct Answer:</strong> {q.correctAnswer || "Requires teacher review"}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </div>
   );

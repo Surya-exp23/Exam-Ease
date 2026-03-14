@@ -51,55 +51,105 @@ def generate_questions():
     try:
         # Simple chunking
         chunks = [text[i:i+400] for i in range(0, len(text), 400)][:5]
-        all_generated = []
+        raw_questions = []
         
         for chunk in chunks:
-            # Model expects some context. Valhalla model uses "generate questions: " prompt.
             if generator == "MOCK":
                 import re
                 import random
                 
-                # First try to find explicit questions in the text chunk
+                # Extract words to use as multiple-choice distractors
+                words = [w.strip('.,!?"\'') for w in chunk.split() if len(w.strip('.,!?"\'')) > 4]
+                distractor_pool = list(set([w for w in words if len(w) > 5]))
+                if len(distractor_pool) < 3:
+                    distractor_pool += ["None of the above", "All of the above", "Not applicable", "Unknown"]
+                
+                # 1. Try to find explicit questions in the text
                 explicit_questions = re.findall(r'([^.!?\n]+\?)', chunk)
-                found_explicit = False
                 for eq in explicit_questions:
                     if len(eq.strip()) > 10:
-                        all_generated.append(eq.strip())
-                        found_explicit = True
+                        raw_questions.append({
+                            "originalQuestion": eq.strip(),
+                            "simplifiedQuestion": eq.strip(),
+                            "type": "subjective",
+                            "options": [],
+                            "marks": 5,
+                            "correctAnswer": "Subjective answer - requires teacher review."
+                        })
                 
-                # If no explicit questions, generate smart ones from declarative sentences
-                if not found_explicit:
-                    sentences = [s.strip() for s in re.split(r'[.!?\n]+', chunk) if len(s.strip()) > 20]
-                    for s in sentences[:3]:
-                        words = [w for w in s.split() if len(w) > 4]
-                        if words:
-                            subject = random.choice(words)
-                            formats = [
-                                f"Explain the context of '{subject}' based on the text.",
-                                f"What does the document say about {subject}?",
-                                f"Discuss the following statement: '{s}'"
-                            ]
-                            all_generated.append(random.choice(formats))
+                # 2. Generate smart MCQs and subjective questions from declarative sentences
+                sentences = [s.strip() for s in re.split(r'[.!?\n]+', chunk) if len(s.strip()) > 40 and '?' not in s]
+                
+                for s in sentences[:2]:  # Pick best sentences
+                    parts = [w.strip('.,!?"\'') for w in s.split()]
+                    potential_blanks = [w for w in parts if len(w) >= 6]
+                    
+                    if potential_blanks:
+                        # Create Fill In The Blank MCQ
+                        correct_answer = random.choice(potential_blanks)
+                        question_text = s.replace(correct_answer, "________")
+                        
+                        distractors = random.sample([n for n in distractor_pool if n != correct_answer], min(3, len(distractor_pool)))
+                        options = [correct_answer] + distractors
+                        while len(options) < 4:
+                            options.append(f"Option {len(options)+1}")
+                        random.shuffle(options)
+                        
+                        raw_questions.append({
+                            "originalQuestion": s,
+                            "simplifiedQuestion": f"Fill in the blank: {question_text}",
+                            "type": "mcq",
+                            "options": options,
+                            "marks": 2,
+                            "correctAnswer": correct_answer
+                        })
+                    
+                    # Randomly decide to create True/False or a Subjective "Explain" question
+                    choice = random.random()
+                    if choice > 0.6:
+                        is_true = random.random() > 0.5
+                        q_text = s if is_true else s.replace(random.choice(parts), "something else")
+                        raw_questions.append({
+                            "originalQuestion": s,
+                            "simplifiedQuestion": f"Is the following statement True or False?\n\"{q_text}\"",
+                            "type": "mcq",
+                            "options": ["True", "False"],
+                            "marks": 1,
+                            "correctAnswer": "True" if is_true else "False"
+                        })
+                    elif choice > 0.3:
+                        # Create Subjective Question
+                        subject = random.choice(potential_blanks) if potential_blanks else "this topic"
+                        raw_questions.append({
+                            "originalQuestion": s,
+                            "simplifiedQuestion": f"Explain the context and significance of '{subject}' based on the text.",
+                            "type": "subjective",
+                            "options": [],
+                            "marks": 5,
+                            "correctAnswer": f"The answer should discuss: {s}"
+                        })
             else:
                 prompt = f"generate questions: {chunk}"
                 results = generator(prompt, max_length=64, num_return_sequences=1)
                 for res in results:
                     gen_text = res.get('generated_text', '')
                     if gen_text and len(gen_text) > 5 and '?' in gen_text:
-                        all_generated.append(gen_text)
+                        raw_questions.append({
+                            "originalQuestion": gen_text,
+                            "simplifiedQuestion": gen_text,
+                            "type": "subjective",
+                            "options": [],
+                            "marks": 5,
+                            "correctAnswer": "Requires manual grading."
+                        })
         
+        # Format the final output: SHUFFLE to guarantee randomness and mix
+        import random
+        random.shuffle(raw_questions)
         formatted_questions = []
-        unique_qs = list(set(all_generated))
-        
-        for i, q in enumerate(unique_qs):
-            formatted_questions.append({
-                "id": i + 1,
-                "originalQuestion": q,
-                "simplifiedQuestion": q,
-                "type": "subjective",
-                "options": [],
-                "marks": 5
-            })
+        for i, q in enumerate(raw_questions[:10]):  # Limit to 10 questions max
+            q["id"] = i + 1
+            formatted_questions.append(q)
             
         if not formatted_questions:
             formatted_questions.append({

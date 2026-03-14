@@ -21,13 +21,14 @@ export async function simplifyQuestions(examText) {
 
     const data = await response.json();
     if (data.questions && Array.isArray(data.questions)) {
-      return data.questions.map((q, index) => ({
+        return data.questions.map((q, index) => ({
         id: index + 1,
         originalQuestion: q.originalQuestion || '',
         simplifiedQuestion: q.simplifiedQuestion || '',
         type: q.type || 'subjective',
         options: q.options || [],
-        marks: q.marks || null
+        marks: q.marks || null,
+        correctAnswer: q.correctAnswer || null
       }));
     } else {
       throw new Error('Invalid response structure from backend');

@@ -99,7 +99,14 @@ const ExamPage = () => {
       document.exitFullscreen().catch(() => {});
     }
 
-    navigate('/complete');
+    navigate('/complete', { 
+      state: { 
+        questions, 
+        answers, 
+        testTitle: testTitle || "Your Exam",
+        userName: user?.displayName || user?.email?.split('@')[0] || "Student"
+      } 
+    });
   };
 
   const answeredCount = Object.keys(answers).length;
