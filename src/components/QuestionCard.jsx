@@ -1,9 +1,72 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { speak, stop } from '../utils/ttsHelper';
-import { Volume2, VolumeX } from 'lucide-react';
+import { Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
 
 const QuestionCard = ({ question, index, answer, onAnswer, isActive, onTranslate, translatedText }) => {
   const [speakingTarget, setSpeakingTarget] = useState(null); // 'question', 0, 1, 2...
+  const [isListening, setIsListening] = useState(false);
+  const recognitionRef = useRef(null);
+
+  const toggleListening = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Your browser does not support Speech Recognition. Please use Chrome.");
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+    };
+
+    recognition.onresult = (event) => {
+      let finalTranscript = '';
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript + ' ';
+        }
+      }
+      
+      if (finalTranscript) {
+        const currentAnswer = answer || '';
+        const safeFinal = finalTranscript.trim();
+        const newAnswer = currentAnswer ? `${currentAnswer} ${safeFinal}` : safeFinal;
+        onAnswer(question.id, newAnswer);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech recognition error", event.error);
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    recognition.start();
+  };
+
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
 
   const handleSpeak = (target, text) => {
     if (speakingTarget === target) {
@@ -105,14 +168,38 @@ const QuestionCard = ({ question, index, answer, onAnswer, isActive, onTranslate
             ))}
           </div>
         ) : (
-          <textarea
-            className="question-card__textarea"
-            placeholder="Type your answer here..."
-            value={answer || ''}
-            onChange={(e) => onAnswer(question.id, e.target.value)}
-            rows={4}
-            style={{ marginTop: '20px' }}
-          />
+          <div style={{ position: 'relative', marginTop: '20px' }}>
+            <textarea
+              className="question-card__textarea"
+              placeholder="Type your answer here or use the microphone..."
+              value={answer || ''}
+              onChange={(e) => onAnswer(question.id, e.target.value)}
+              rows={4}
+              style={{ width: '100%', minHeight: '120px', paddingBottom: '40px', boxSizing: 'border-box' }}
+            />
+            <button
+              onClick={toggleListening}
+              title={isListening ? "Stop Listening" : "Start Listening"}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                bottom: '12px',
+                padding: '8px',
+                borderRadius: '50%',
+                background: isListening ? '#ef4444' : 'var(--bg-glass, rgba(255, 255, 255, 0.1))',
+                color: isListening ? '#fff' : 'inherit',
+                border: '1px solid var(--border-color, rgba(255, 255, 255, 0.2))',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'all 0.2s ease',
+                zIndex: 10
+              }}
+            >
+              {isListening ? <MicOff size={18} /> : <Mic size={18} />}
+            </button>
+          </div>
         )}
       </div>
     </div>
