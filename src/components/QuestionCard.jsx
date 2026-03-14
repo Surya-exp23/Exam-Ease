@@ -4,6 +4,7 @@ import { Volume2, VolumeX, Mic, MicOff } from 'lucide-react';
 
 const QuestionCard = ({ question, index, answer, onAnswer, isActive, onTranslate, translatedText }) => {
   const [speakingTarget, setSpeakingTarget] = useState(null); // 'question', 0, 1, 2...
+  const [activeWordIndex, setActiveWordIndex] = useState(-1);
   const [isListening, setIsListening] = useState(false);
   const recognitionRef = useRef(null);
 
@@ -72,28 +73,77 @@ const QuestionCard = ({ question, index, answer, onAnswer, isActive, onTranslate
     if (speakingTarget === target) {
       stop();
       setSpeakingTarget(null);
+      setActiveWordIndex(-1);
     } else {
       stop(); // stop previous speech
+      
+      // We need to count words prior to the character index to know which word is spoken
+      const getWordIndexFromCharIndex = (charIndex, fullText) => {
+        const textUpToChar = fullText.substring(0, charIndex);
+        // split by the same regex we use to render words
+        const parts = textUpToChar.split(/(\b[a-zA-Z]+\b)/);
+        // Filter out non-word parts (like spaces/punctuation) to align with our rendered word chunks
+        const wordParts = parts.filter(p => /^[a-zA-Z]+$/.test(p));
+        return wordParts.length;
+      };
+
       speak(text, {
-        onEnd: () => setSpeakingTarget(null)
+        onEnd: () => {
+          setSpeakingTarget(null);
+          setActiveWordIndex(-1);
+        },
+        onBoundary: (event) => {
+          if (event.name === 'word') {
+            const wordIdx = getWordIndexFromCharIndex(event.charIndex, text);
+            setActiveWordIndex(wordIdx);
+          }
+        }
       });
       setSpeakingTarget(target);
+      setActiveWordIndex(0);
     }
   };
 
   const displayQuestion = translatedText || question.simplifiedQuestion;
 
-  const renderHighlightedText = (text) => {
+  const renderHighlightedText = (text, isTargetActive) => {
     if (!text) return null;
     const stopWords = ['what', 'when', 'where', 'which', 'who', 'why', 'how', 'is', 'are', 'was', 'were', 'am', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'a', 'an', 'the', 'and', 'but', 'if', 'or', 'because', 'as', 'until', 'while', 'of', 'at', 'by', 'for', 'with', 'about', 'against', 'between', 'into', 'through', 'during', 'before', 'after', 'above', 'below', 'to', 'from', 'up', 'down', 'in', 'out', 'on', 'off', 'over', 'under', 'again', 'further', 'then', 'once', 'here', 'there', 'all', 'any', 'both', 'each', 'few', 'more', 'most', 'other', 'some', 'such', 'no', 'nor', 'not', 'only', 'own', 'same', 'so', 'than', 'too', 'very', 'can', 'will', 'just', 'should', 'now', 'that', 'this', 'these', 'those'];
     
     // Split by words but keep the punctuation intact
     const parts = text.split(/(\b[a-zA-Z]+\b)/);
     
+    let wordCounter = 0;
+    
     return parts.map((part, i) => {
-      // Highlight if word length > 4 and not a common stop word
-      if (/^[a-zA-Z]+$/.test(part) && part.length > 4 && !stopWords.includes(part.toLowerCase())) {
-        return <strong key={i} style={{ color: 'var(--primary)', fontWeight: '800' }}>{part}</strong>;
+      const isWord = /^[a-zA-Z]+$/.test(part);
+      const isCurrentDictatedWord = isTargetActive && activeWordIndex === wordCounter;
+      
+      if (isWord) {
+        wordCounter++;
+        
+        let style = {};
+        // 1. Static highlight feature for long non-stopwords
+        if (part.length > 4 && !stopWords.includes(part.toLowerCase())) {
+          style = { color: 'var(--primary)', fontWeight: '800' };
+        }
+        
+        // 2. Dynamic Karaoke Dictation Highlight
+        if (isCurrentDictatedWord) {
+          style = {
+            ...style,
+            backgroundColor: 'var(--primary-light)',
+            color: '#fff',
+            padding: '0 4px',
+            borderRadius: '4px',
+            borderBottom: '4px solid var(--primary-dark)',
+            transition: 'all 0.15s ease-in-out',
+            transform: 'scale(1.05)',
+            display: 'inline-block'
+          };
+        }
+
+        return <span key={i} style={style}>{part}</span>;
       }
       return part;
     });
@@ -103,6 +153,7 @@ const QuestionCard = ({ question, index, answer, onAnswer, isActive, onTranslate
   if (!isActive && speakingTarget !== null) {
     stop();
     setSpeakingTarget(null);
+    setActiveWordIndex(-1);
   }
 
   return (
@@ -129,7 +180,9 @@ const QuestionCard = ({ question, index, answer, onAnswer, isActive, onTranslate
           >
             {speakingTarget === 'question' ? <VolumeX size={16} /> : <Volume2 size={16} />}
           </button>
-          <p className="question-card__question" style={{ margin: 0 }}>{renderHighlightedText(displayQuestion)}</p>
+          <p className="question-card__question" style={{ margin: 0, lineHeight: '1.6' }}>
+            {renderHighlightedText(displayQuestion, speakingTarget === 'question')}
+          </p>
         </div>
 
         {question.originalQuestion !== question.simplifiedQuestion && (
@@ -162,7 +215,9 @@ const QuestionCard = ({ question, index, answer, onAnswer, isActive, onTranslate
                     onChange={() => onAnswer(question.id, option)}
                   />
                   <span className="question-card__option-radio"></span>
-                  <span className="question-card__option-text">{option}</span>
+                  <span className="question-card__option-text" style={{ lineHeight: '1.6' }}>
+                    {renderHighlightedText(option, speakingTarget === i)}
+                  </span>
                 </label>
               </div>
             ))}

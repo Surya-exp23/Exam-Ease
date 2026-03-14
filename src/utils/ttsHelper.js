@@ -12,6 +12,7 @@ let currentUtterance = null;
  * @param {number} options.pitch - Speech pitch (0-2) 
  * @param {string} options.lang - Language code (e.g., 'en-US')
  * @param {function} options.onEnd - Callback when speech finishes
+ * @param {function} options.onBoundary - Callback for word boundaries
  */
 export function speak(text, options = {}) {
   stop(); // Stop any current speech
@@ -28,6 +29,10 @@ export function speak(text, options = {}) {
   
   if (options.onEnd) {
     utterance.onend = options.onEnd;
+  }
+  
+  if (options.onBoundary) {
+    utterance.onboundary = options.onBoundary;
   }
 
   currentUtterance = utterance;
